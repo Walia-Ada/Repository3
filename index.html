@@ -461,10 +461,16 @@
 
 <div class="video-overlay" id="videoOverlay">
   <div class="video-frame">
-    <video id="videoPlayer" playsinline preload="auto" muted>
-      <source src="narrativevideo.mp4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
+    <!-- YouTube Embed (replace VIDEO_ID with your actual video ID) -->
+    <iframe id="videoPlayer"
+      width="100%"
+      height="400"
+      src="https://www.youtube.com/embed/GgWOJIC6Kp8?autoplay=1&mute=1&controls=0&rel=0&playsinline=1"
+      title="Narrative Video"
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
     <div class="video-progress"><div class="video-progress-bar" id="progressBar"></div></div>
   </div>
 </div>
@@ -582,12 +588,17 @@
     showFinal();
   }
 
-  function startProgressTracking() {
+  function startProgressTracking(durationMs = 40000) {
     clearInterval(progressIntervalId);
+    const startedAt = Date.now();
     progressIntervalId = setInterval(() => {
-      if (!videoPlayer || !videoPlayer.duration || Number.isNaN(videoPlayer.duration)) return;
-      const pct = Math.min((videoPlayer.currentTime / videoPlayer.duration) * 100, 100);
+      const elapsed = Date.now() - startedAt;
+      const pct = Math.min((elapsed / durationMs) * 100, 100);
       progressBar.style.width = pct + '%';
+      if (pct >= 100) {
+        clearInterval(progressIntervalId);
+        progressIntervalId = null;
+      }
     }, 100);
   }
 
@@ -596,21 +607,14 @@
     progressBar.style.width = '0%';
     clearPlaybackTimers();
 
-    videoPlayer.currentTime = 0;
-    videoPlayer.onended = finishPlayback;
-    videoPlayer.onerror = () => {
-      console.error('Video failed to load. Make sure narrativevideo.mp4 is in the same folder as this HTML file.');
-      fallbackTimeoutId = setTimeout(finishPlayback, 4500);
-    };
+    const baseSrc = 'https://www.youtube.com/embed/GgWOJIC6Kp8';
+    videoPlayer.src = baseSrc + '?autoplay=1&mute=1&controls=0&rel=0&playsinline=1';
 
-    const playAttempt = videoPlayer.play();
-    startProgressTracking();
-
-    if (playAttempt && typeof playAttempt.catch === 'function') {
-      playAttempt.catch(() => {
-        fallbackTimeoutId = setTimeout(finishPlayback, 4500);
-      });
-    }
+    startProgressTracking(40000);
+    fallbackTimeoutId = setTimeout(() => {
+      videoPlayer.src = '';
+      finishPlayback();
+    }, 40000);
   }
 
   function showFinal() {
