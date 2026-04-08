@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repository Access</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #0d0b08;
+    --paper: #f0e8d8;
+    --paper-dim: #c8b898;
+    --ink: #1a1208;
+    --ink-light: #7a6a50;
+    --red: #8a1a0a;
+    --green: #1a4a2a;
+    --rule: #4a3a28;
+    --panel: #181410;
+    --key-bg: #1e1a14;
+    --key-border: #3a3020;
+    --key-text: #c8b080;
+    --key-hover: #2e2818;
+    --key-active: #0a0806;
+    --display-bg: #060504;
+    --display-text: #c8a040;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+  }
+
+  .layout {
+    display: flex;
+    width: 100%;
+    max-width: 900px;
+    min-height: 100vh;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .instructions-panel {
+    flex: 1;
+    background: var(--paper);
+    padding: 48px 40px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 3px solid var(--rule);
+  }
+
+  .instructions-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.8;
+  }
+
+  .dept-tag {
+    font-size: 7px;
+    letter-spacing: 0.28em;
+    color: var(--ink-light);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .instruction-heading {
+    font-family: 'Special Elite', cursive;
+    font-size: 13px;
+    color: var(--ink-light);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .instruction-body {
+    font-family: 'Special Elite', cursive;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.55;
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .code-hint {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    background: rgba(0,0,0,0.06);
+    border: 1px solid var(--paper-dim);
+    padding: 10px 16px;
+    display: inline-block;
+    position: relative;
+    margin-bottom: 32px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--paper-dim);
+    margin: 24px 0;
+    position: relative;
+  }
+
+  .pinpad-panel {
+    width: 340px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    position: relative;
+    border-left: 1px solid #2a2018;
+  }
+
+  .pinpad-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+
+  .panel-label {
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    color: #9a7a4a;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    position: relative;
+    opacity: 0.9;
+  }
+
+  .display {
+    width: 100%;
+    background: var(--display-bg);
+    border: 1px solid #2a2018;
+    border-bottom: none;
+    padding: 16px 18px 12px;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .display-prefix {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #5a4020;
+    margin-bottom: 6px;
+  }
+
+  .display-code {
+    font-size: 28px;
+    letter-spacing: 0.22em;
+    color: var(--display-text);
+    min-height: 42px;
+    text-shadow: 0 0 12px rgba(200, 160, 64, 0.4);
+    transition: color 0.2s;
+  }
+
+  .display-code.error {
+    color: #c03020;
+    text-shadow: 0 0 12px rgba(200, 48, 32, 0.4);
+    animation: shake 0.3s ease;
+  }
+
+  .display-code.success {
+    color: #40c060;
+    text-shadow: 0 0 16px rgba(64, 192, 96, 0.6);
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 28px;
+    background: var(--display-text);
+    vertical-align: middle;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .keypad {
+    width: 100%;
+    background: #100e0a;
+    border: 1px solid #2a2018;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    position: relative;
+  }
+
+  .key {
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-bottom: 3px solid #100e0a;
+    color: var(--key-text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    padding: 18px 0;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.08s, transform 0.08s, border-bottom 0.08s;
+    position: relative;
+    letter-spacing: 0.05em;
+  }
+
+  .key:hover {
+    background: var(--key-hover);
+    color: #e0c898;
+  }
+
+  .key:active,
+  .key.pressed {
+    background: var(--key-active);
+    border-bottom-width: 1px;
+    transform: translateY(2px);
+  }
+
+  .key.action {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #6a3020;
+    border-color: #3a1810;
+  }
+
+  .key.action:hover {
+    color: #c03020;
+    background: #1a0e0a;
+  }
+
+  .key.enter {
+    color: #2a6a3a;
+    border-color: #183820;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .key.enter:hover {
+    color: #40c060;
+    background: #0a1a0e;
+  }
+
+  .status-bar {
+    width: 100%;
+    background: #080604;
+    border: 1px solid #2a2018;
+    border-top: none;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2a2018;
+    transition: background 0.3s;
+  }
+
+  .status-dot.active {
+    background: #40c060;
+    box-shadow: 0 0 6px #40c060;
+  }
+
+  .status-dot.error {
+    background: #c03020;
+    box-shadow: 0 0 6px #c03020;
+  }
+
+  .status-text {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: #8a6a3a;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+
+  .status-text.active { color: #40c060; }
+  .status-text.error { color: #c03020; }
+
+  .video-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .video-overlay.show {
+    display: flex;
+  }
+
+  .video-frame {
+    width: min(100%, 700px);
+  }
+
+  .video-frame video {
+    width: 100%;
+    display: block;
+    border: 1px solid #2a2018;
+    background: #000;
+  }
+
+  .video-progress {
+    width: 100%;
+    height: 2px;
+    background: #1a1408;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .video-progress-bar {
+    height: 100%;
+    background: var(--display-text);
+    width: 0%;
+    transition: width 0.15s linear;
+  }
+
+  .final-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 300;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .final-overlay.show {
+    display: flex;
+  }
+
+  .final-symbol {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 40px;
+    opacity: 0.6;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+
+  .final-label {
+    font-size: 8px;
+    letter-spacing: 0.35em;
+    color: #4a3a28;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .final-message {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(22px, 4vw, 36px);
+    color: var(--paper);
+    line-height: 1.5;
+    max-width: 560px;
+    letter-spacing: 0.02em;
+    animation: fadeIn 2s ease;
+  }
+
+  .final-room {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(16px, 3vw, 24px);
+    color: var(--display-text);
+    letter-spacing: 0.2em;
+    margin-top: 12px;
+    text-shadow: 0 0 16px rgba(200,160,64,0.5);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 640px) {
+    .layout { flex-direction: column; }
+    .pinpad-panel { width: 100%; }
+    .instructions-panel { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="instructions-panel">
+    <div class="dept-tag">Records Oversight · Restricted Terminal</div>
+    <div class="instruction-heading">Access Protocol</div>
+    <div class="instruction-body">Locate the rest of the code on the pinboard.</div>
+    <div class="code-hint">REP – 0600 – _ _ _ _</div>
+    <hr class="divider">
+  </div>
+
+  <div class="pinpad-panel">
+    <div class="panel-label">Lower Archive · Entry Terminal</div>
+
+    <div class="display">
+      <div class="display-prefix">REP – 0600 –</div>
+      <div class="display-code" id="display"><span class="cursor"></span></div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-text" id="statusText">Awaiting input</div>
+    </div>
+
+    <div class="keypad">
+      <button class="key" type="button" onclick="press('1')">1</button>
+      <button class="key" type="button" onclick="press('2')">2</button>
+      <button class="key" type="button" onclick="press('3')">3</button>
+      <button class="key" type="button" onclick="press('4')">4</button>
+      <button class="key" type="button" onclick="press('5')">5</button>
+      <button class="key" type="button" onclick="press('6')">6</button>
+      <button class="key" type="button" onclick="press('7')">7</button>
+      <button class="key" type="button" onclick="press('8')">8</button>
+      <button class="key" type="button" onclick="press('9')">9</button>
+      <button class="key action" type="button" onclick="clear_()">CLR</button>
+      <button class="key" type="button" onclick="press('0')">0</button>
+      <button class="key enter" type="button" onclick="submitCode()">ENTER</button>
+    </div>
+  </div>
+</div>
+
+<div class="video-overlay" id="videoOverlay">
+  <div class="video-frame">
+    <video id="videoPlayer" playsinline preload="auto" muted>
+      <source src="narrativevideo.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <div class="video-progress"><div class="video-progress-bar" id="progressBar"></div></div>
+  </div>
+</div>
+
+<div class="final-overlay" id="finalOverlay">
+  <svg class="final-symbol" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="20" cy="20" r="16" stroke="#c8a040" stroke-width="3" fill="none"></circle>
+    <polygon points="20,20 10,30 28,26" fill="#c8a040"></polygon>
+  </svg>
+  <div class="final-label">Access Granted · Archive Protocol Complete</div>
+  <div class="final-message">Go find the lever in room</div>
+  <div class="final-room">J319</div>
+  <div class="final-message" style="margin-top:16px; font-size: clamp(18px,3vw,26px); color: #c8b898;">and make your final choice.</div>
+</div>
+
+<script>
+  const CORRECT = '1855';
+  let input = '';
+  let locked = false;
+  let fallbackTimeoutId = null;
+  let progressIntervalId = null;
+
+  const display = document.getElementById('display');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const videoOverlay = document.getElementById('videoOverlay');
+  const videoPlayer = document.getElementById('videoPlayer');
+  const finalOverlay = document.getElementById('finalOverlay');
+  const progressBar = document.getElementById('progressBar');
+
+  function updateDisplay() {
+    const shown = input.padEnd(4, '_');
+    display.innerHTML = shown + '<span class="cursor"></span>';
+  }
+
+  function setStatus(state, msg) {
+    statusDot.className = 'status-dot' + (state ? ' ' + state : '');
+    statusText.className = 'status-text' + (state ? ' ' + state : '');
+    statusText.textContent = msg;
+  }
+
+  function animateKey(label) {
+    document.querySelectorAll('.key').forEach((key) => {
+      if (key.textContent.trim() === label) {
+        key.classList.add('pressed');
+        setTimeout(() => key.classList.remove('pressed'), 150);
+      }
+    });
+  }
+
+  function press(digit) {
+    if (locked || input.length >= 4) return;
+    input += digit;
+    display.classList.remove('error', 'success');
+    updateDisplay();
+    setStatus('', 'Entering code...');
+    animateKey(digit);
+  }
+
+  function clear_() {
+    if (locked) return;
+    input = '';
+    display.classList.remove('error', 'success');
+    updateDisplay();
+    setStatus('', 'Awaiting input');
+    animateKey('CLR');
+  }
+
+  function resetAfterError() {
+    display.classList.remove('error');
+    input = '';
+    updateDisplay();
+    setStatus('', 'Awaiting input');
+  }
+
+  function submitCode() {
+    if (locked) return;
+    animateKey('ENTER');
+
+    if (input.length < 4) {
+      setStatus('error', 'Incomplete code');
+      display.classList.add('error');
+      setTimeout(() => display.classList.remove('error'), 600);
+      return;
+    }
+
+    if (input === CORRECT) {
+      locked = true;
+      display.classList.remove('error');
+      display.classList.add('success');
+      setStatus('active', 'Access granted');
+      setTimeout(playVideo, 900);
+      return;
+    }
+
+    display.classList.add('error');
+    setStatus('error', 'Access denied');
+    setTimeout(resetAfterError, 800);
+  }
+
+  function clearPlaybackTimers() {
+    if (fallbackTimeoutId) {
+      clearTimeout(fallbackTimeoutId);
+      fallbackTimeoutId = null;
+    }
+    if (progressIntervalId) {
+      clearInterval(progressIntervalId);
+      progressIntervalId = null;
+    }
+  }
+
+  function finishPlayback() {
+    clearPlaybackTimers();
+    videoOverlay.classList.remove('show');
+    showFinal();
+  }
+
+  function startProgressTracking() {
+    clearInterval(progressIntervalId);
+    progressIntervalId = setInterval(() => {
+      if (!videoPlayer || !videoPlayer.duration || Number.isNaN(videoPlayer.duration)) return;
+      const pct = Math.min((videoPlayer.currentTime / videoPlayer.duration) * 100, 100);
+      progressBar.style.width = pct + '%';
+    }, 100);
+  }
+
+  function playVideo() {
+    videoOverlay.classList.add('show');
+    progressBar.style.width = '0%';
+    clearPlaybackTimers();
+
+    videoPlayer.currentTime = 0;
+    videoPlayer.onended = finishPlayback;
+    videoPlayer.onerror = () => {
+      console.error('Video failed to load. Make sure narrativevideo.mp4 is in the same folder as this HTML file.');
+      fallbackTimeoutId = setTimeout(finishPlayback, 4500);
+    };
+
+    const playAttempt = videoPlayer.play();
+    startProgressTracking();
+
+    if (playAttempt && typeof playAttempt.catch === 'function') {
+      playAttempt.catch(() => {
+        fallbackTimeoutId = setTimeout(finishPlayback, 4500);
+      });
+    }
+  }
+
+  function showFinal() {
+    finalOverlay.classList.add('show');
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') press(e.key);
+    if (e.key === 'Enter') submitCode();
+    if (e.key === 'Backspace' || e.key === 'Delete') clear_();
+  });
+
+  updateDisplay();
+
+  (function runSmokeTests() {
+    console.assert(typeof press === 'function', 'press should be defined');
+    console.assert(typeof clear_ === 'function', 'clear_ should be defined');
+    console.assert(typeof submitCode === 'function', 'submitCode should be defined');
+    console.assert(display.textContent.replace(/\s+/g, '').includes('____'), 'display should initialize with 4 placeholders');
+  })();
+</script>
+</body>
+</html>
